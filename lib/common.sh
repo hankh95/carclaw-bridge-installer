@@ -249,6 +249,61 @@ setup_whatsapp() {
     fi
 }
 
+# ─── Agent Roster ──────────────────────────────────────────────────────────
+
+detect_agents() {
+    if detect_env; then
+        grep -q "^AGENTS=.\+" "$ENV_FILE" 2>/dev/null
+    else
+        return 1
+    fi
+}
+
+setup_agents() {
+    step "Agent Roster"
+
+    if detect_agents; then
+        local current
+        current=$(grep "^AGENTS=" "$ENV_FILE" | cut -d= -f2-)
+        ok "Agents already configured: $current"
+        echo -n "Reconfigure? (y/N): "
+        read -r yn
+        if [[ ! "$yn" =~ ^[Yy] ]]; then
+            return 0
+        fi
+    fi
+
+    echo "These are the AI agents CarClaw can address by voice."
+    echo "Enter their names separated by commas."
+    echo ""
+    echo -e "  Default: ${BOLD}Mini, M5, DGX, Copilot${NC}"
+    echo ""
+    echo -n "Agent names (or Enter for default): "
+    read -r agent_input
+
+    if [[ -z "$agent_input" ]]; then
+        agent_input="Mini, M5, DGX, Copilot"
+    fi
+
+    # Convert "Mini, M5, DGX" → "mini:Mini,m5:M5,dgx:DGX"
+    local agents_env=""
+    IFS=',' read -ra names <<< "$agent_input"
+    for name in "${names[@]}"; do
+        name=$(echo "$name" | xargs)  # trim whitespace
+        if [[ -n "$name" ]]; then
+            local id
+            id=$(echo "$name" | tr '[:upper:]' '[:lower:]' | tr ' ' '-')
+            if [[ -n "$agents_env" ]]; then
+                agents_env="${agents_env},"
+            fi
+            agents_env="${agents_env}${id}:${name}"
+        fi
+    done
+
+    set_env "AGENTS" "$agents_env"
+    ok "Agents configured: $agents_env"
+}
+
 # ─── .env Management ────────────────────────────────────────────────────────
 
 init_env() {

@@ -213,6 +213,10 @@ if prompt_services; then
     done
 fi
 
+# ─── Agent Roster ───────────────────────────────────────────────────────────
+
+setup_agents
+
 # ─── systemd Service ────────────────────────────────────────────────────────
 
 step "System Service (systemd)"

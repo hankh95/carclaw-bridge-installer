@@ -132,6 +132,10 @@ if prompt_services; then
     done
 fi
 
+# ─── Agent Roster ───────────────────────────────────────────────────────────
+
+setup_agents
+
 # ─── launchd Service ────────────────────────────────────────────────────────
 
 step "System Service (launchd)"
