@@ -386,3 +386,78 @@ show_summary() {
     echo -e "  ${DIM}CarClaw app will auto-discover this bridge on your local network.${NC}"
     echo ""
 }
+
+# ─── Tailscale Setup ─────────────────────────────────────────────────────────
+
+detect_tailscale() {
+    has_command tailscale && tailscale status &>/dev/null
+}
+
+detect_tailscale_installed() {
+    has_command tailscale
+}
+
+get_tailscale_ip() {
+    tailscale ip -4 2>/dev/null | head -1
+}
+
+setup_tailscale() {
+    step "Tailscale (Remote Access)"
+
+    if detect_tailscale; then
+        local ts_ip
+        ts_ip=$(get_tailscale_ip)
+        ok "Tailscale connected — IP: ${ts_ip:-unknown}"
+        info "CarClaw will use this IP for remote access while driving."
+        return 0
+    fi
+
+    if detect_tailscale_installed; then
+        warn "Tailscale is installed but not connected."
+        echo "  Sign in at: https://login.tailscale.com"
+        echo ""
+        echo -n "Skip Tailscale for now? (Y/n): "
+        read -r yn
+        if [[ ! "$yn" =~ ^[Nn] ]]; then
+            info "Skipped — you can connect later with: tailscale up"
+        else
+            tailscale up 2>/dev/null || info "Run 'tailscale up' in a new terminal to authenticate"
+        fi
+        return 0
+    fi
+
+    echo "Tailscale lets CarClaw connect to this bridge from anywhere —"
+    echo "in your car on cellular, away from home Wi-Fi."
+    echo ""
+    echo -n "Install Tailscale? (Y/n): "
+    read -r yn
+    if [[ "$yn" =~ ^[Nn] ]]; then
+        info "Skipped — CarClaw will only work on your local Wi-Fi network."
+        return 0
+    fi
+
+    _install_tailscale
+
+    echo ""
+    echo "  Sign in to Tailscale (opens browser or shows link):"
+    echo ""
+    tailscale up 2>/dev/null || true
+    echo ""
+
+    # Wait briefly for auth
+    local waited=0
+    while [[ $waited -lt 30 ]]; do
+        if detect_tailscale; then
+            local ts_ip
+            ts_ip=$(get_tailscale_ip)
+            ok "Tailscale connected — IP: ${ts_ip:-unknown}"
+            info "Also install Tailscale on your iPhone (App Store) and sign in with the same account."
+            return 0
+        fi
+        sleep 2
+        waited=$((waited + 2))
+    done
+
+    warn "Tailscale not yet connected — complete sign-in at https://login.tailscale.com"
+    info "Once connected, CarClaw will auto-discover the remote URL."
+}

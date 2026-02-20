@@ -217,6 +217,10 @@ fi
 
 setup_agents
 
+# ─── Tailscale ───────────────────────────────────────────────────────────────
+
+setup_tailscale
+
 # ─── systemd Service ────────────────────────────────────────────────────────
 
 step "System Service (systemd)"
@@ -295,4 +299,10 @@ SERVICE
     sudo systemctl daemon-reload
     sudo systemctl enable carclaw-bridge
     ok "Created systemd service: carclaw-bridge"
+}
+
+function _install_tailscale() {
+    info "Installing Tailscale..."
+    curl -fsSL https://tailscale.com/install.sh | sh
+    ok "Tailscale installed"
 }

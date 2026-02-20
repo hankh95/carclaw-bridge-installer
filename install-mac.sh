@@ -136,6 +136,10 @@ fi
 
 setup_agents
 
+# ─── Tailscale ───────────────────────────────────────────────────────────────
+
+setup_tailscale
+
 # ─── launchd Service ────────────────────────────────────────────────────────
 
 step "System Service (launchd)"
@@ -290,4 +294,16 @@ function create_launchd_plist() {
 PLIST
 
     ok "Created launchd plist at $PLIST_PATH"
+}
+
+function _install_tailscale() {
+    if has_command brew; then
+        info "Installing Tailscale via Homebrew..."
+        brew install --cask tailscale
+        ok "Tailscale installed"
+    else
+        echo "Download Tailscale from: https://tailscale.com/download/mac"
+        echo -n "Press Enter when installed..."
+        read -r
+    fi
 }
